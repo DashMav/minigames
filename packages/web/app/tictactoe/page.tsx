@@ -303,7 +303,7 @@ export default function TicTacToePage() {
       // 200ms chat polling for instantaneous updates
       const chatPollInterval = setInterval(() => {
         fetchChatMessages();
-      }, 200);
+      }, 1000);
 
       // Cleanup subscription on component unmount
       return () => {
