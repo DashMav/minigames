@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from 
 import { createClient } from '@supabase/supabase-js';
 
 // --- Supabase Client (for Realtime) ---
-const supabaseUrl = 'https://bgiiiaxjairvwzqzbtjs.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnaWlpYXhqYWlydnd6cXpidGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMTcxMTIsImV4cCI6MjA3OTY5MzExMn0.aWywOUilDqRTSnJXj9YLAMWTn084huSNs4nr1g14KmY';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://bgiiiaxjairvwzqzbtjs.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnaWlpYXhqYWlydnd6cXpidGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMTcxMTIsImV4cCI6MjA3OTY5MzExMn0.aWywOUilDqRTSnJXj9YLAMWTn084huSNs4nr1g14KmY';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Add CSS animations
@@ -167,9 +167,11 @@ export default function TicTacToePage() {
   const createOrJoinGame = async (specificGameId?: string) => {
     try {
       const token = localStorage.getItem('auth_token');
-      let url = 'http://localhost:3002/games';
+      const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL || 'http://localhost:3002';
+      console.log('Game Service URL:', gameServiceUrl);
+      let url = `${gameServiceUrl}/games`;
       if (specificGameId) {
-        url = `http://localhost:3002/games/${specificGameId}/join`;
+        url = `${gameServiceUrl}/games/${specificGameId}/join`;
       }
       
       const res = await fetchWithPool(url, { 
@@ -214,7 +216,8 @@ export default function TicTacToePage() {
           // Skip fetch if component is unmounting
           if (!gameId) return;
           try {
-            const res = await fetchWithPool(`http://localhost:3002/games/${gameId}`);
+            const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL || 'http://localhost:3002';
+            const res = await fetchWithPool(`${gameServiceUrl}/games/${gameId}`);
             const data = await res.json();
             if (res.ok) {
               setGameState(data.gameState);

@@ -20,6 +20,7 @@ const corsOptions = {
   origin: [
     'http://localhost:3000',
     'https://localhost:3000',
+    'https://minigames-web-ibcx.vercel.app',
     /^https:\/\/.*\.vercel\.app$/,
     /^https:\/\/.*\.netlify\.app$/,
     process.env.FRONTEND_URL
