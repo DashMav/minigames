@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./packages/web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_AUTH_URL=http://localhost:3001
+      - NEXT_PUBLIC_GAME_URL=http://localhost:3002
+      - NEXT_PUBLIC_CHAT_URL=http://localhost:3003
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    depends_on:
+      - auth
+      - tictactoe
+      - chat
+
+  auth:
+    build: ./packages/auth
+    ports:
+      - "3001:3001"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+
+  tictactoe:
+    build: ./packages/tictactoe
+    ports:
+      - "3002:3002"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+
+  chat:
+    build: ./packages/chat
+    ports:
+      - "3003:3003"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - JWT_SECRET=${JWT_SECRET}
