@@ -392,6 +392,18 @@ export default function TicTacToePage() {
   const sendChatMessage = async () => {
     if (!newMessage.trim() || !gameId || !process.env.NEXT_PUBLIC_CHAT_URL) return;
     
+    const messageText = newMessage.trim();
+    
+    // Optimistic update - show message immediately
+    const optimisticMessage = {
+      id: `temp-${Date.now()}`,
+      user_email: userEmail || 'You',
+      message: messageText,
+      created_at: new Date().toISOString()
+    };
+    setChatMessages(prev => [...prev, optimisticMessage]);
+    setNewMessage('');
+    
     try {
       const token = localStorage.getItem('auth_token');
       const chatServiceUrl = process.env.NEXT_PUBLIC_CHAT_URL;
@@ -401,16 +413,18 @@ export default function TicTacToePage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ message: newMessage.trim() })
+        body: JSON.stringify({ message: messageText })
       });
       
-      if (res.ok) {
-        setNewMessage('');
-        // Immediately fetch updated chat messages
-        fetchChatMessages();
+      if (!res.ok) {
+        // Revert optimistic update on failure
+        setChatMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+        setNewMessage(messageText); // Restore message
       }
     } catch (err) {
-      // Silent fail
+      // Revert optimistic update on error
+      setChatMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      setNewMessage(messageText); // Restore message
     }
   };
 
