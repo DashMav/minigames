@@ -290,7 +290,8 @@ export default function TicTacToePage() {
     
     try {
       const token = localStorage.getItem('auth_token');
-      const res = await fetchWithPool(`http://localhost:3002/games/${gameId}/move`, {
+      const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL || 'http://localhost:3002';
+      const res = await fetchWithPool(`${gameServiceUrl}/games/${gameId}/move`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
