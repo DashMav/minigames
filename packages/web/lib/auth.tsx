@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     if (token) {
-      fetch(`${process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3001'}/me`, {
+      fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => res.json())
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:3001'}/login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

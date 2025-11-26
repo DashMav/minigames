@@ -140,6 +140,10 @@ export default function TicTacToePage() {
   const [showJoinForm, setShowJoinForm] = useState(false);
   const [gameInitialized, setGameInitialized] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<{id: string, user_email: string, message: string, created_at: string}[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [showChat, setShowChat] = useState(false);
+
 
   // Get user info on component mount
   useEffect(() => {
@@ -167,7 +171,7 @@ export default function TicTacToePage() {
   const createOrJoinGame = async (specificGameId?: string) => {
     try {
       const token = localStorage.getItem('auth_token');
-      const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL || 'http://localhost:3002';
+      const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL;
 
       let url = `${gameServiceUrl}/games`;
       if (specificGameId) {
@@ -218,7 +222,7 @@ export default function TicTacToePage() {
           // Skip fetch if component is unmounting
           if (!gameId) return;
           try {
-            const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL || 'http://localhost:3002';
+            const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL;
             const res = await fetchWithPool(`${gameServiceUrl}/games/${gameId}`);
             const data = await res.json();
             if (res.ok) {
@@ -234,11 +238,31 @@ export default function TicTacToePage() {
         }, 100); // Faster response
       };
       
+
+      
       fetchGameState(); // Fetch initial state immediately
+      
+      const fetchChatMessages = async () => {
+        if (!gameId || gameStatus !== 'active') return;
+        try {
+          const chatServiceUrl = process.env.NEXT_PUBLIC_CHAT_URL;
+          const res = await fetchWithPool(`${chatServiceUrl}/chat/${gameId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setChatMessages(data.messages || []);
+          }
+        } catch (err) {
+          // Silent fail
+        }
+      };
+      
+      fetchGameState();
+      fetchChatMessages();
 
       // Primary polling mechanism for reliable updates
       const pollInterval = setInterval(() => {
         fetchGameState();
+        fetchChatMessages();
       }, 1500);
 
       // Try to subscribe to real-time updates as backup
@@ -259,6 +283,7 @@ export default function TicTacToePage() {
             fetchGameState();
           }
         )
+
         .subscribe();
 
       // Cleanup subscription on component unmount
@@ -293,7 +318,7 @@ export default function TicTacToePage() {
     
     try {
       const token = localStorage.getItem('auth_token');
-      const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL || 'http://localhost:3002';
+      const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL;
       const res = await fetchWithPool(`${gameServiceUrl}/games/${gameId}/quit`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -324,7 +349,7 @@ export default function TicTacToePage() {
     
     try {
       const token = localStorage.getItem('auth_token');
-      const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL || 'http://localhost:3002';
+      const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL;
       const res = await fetchWithPool(`${gameServiceUrl}/games/${gameId}/move`, {
         method: 'POST',
         headers: { 
@@ -350,6 +375,31 @@ export default function TicTacToePage() {
       setError('Could not connect to the game service.');
     }
   }, [gameId, gameState, playerSymbol]);
+
+  const sendChatMessage = async () => {
+    if (!newMessage.trim() || !gameId) return;
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const chatServiceUrl = process.env.NEXT_PUBLIC_CHAT_URL;
+      const res = await fetchWithPool(`${chatServiceUrl}/chat/${gameId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ message: newMessage.trim() })
+      });
+      
+      if (res.ok) {
+        setNewMessage('');
+      }
+    } catch (err) {
+      // Silent fail
+    }
+  };
+
+
 
   const renderSquare = useCallback((i: number) => {
     const isCooldown = gameState?.cooldownSpot === i;
@@ -566,6 +616,134 @@ export default function TicTacToePage() {
               boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)'
             }}></div>
             <span>🚫 Position {gameState.cooldownSpot + 1} is blocked - oldest move removed!</span>
+          </div>
+        )}
+        
+
+        
+        {/* Chat Toggle */}
+        {gameStatus === 'active' && (
+          <button 
+            onClick={() => setShowChat(!showChat)}
+            style={{
+              position: 'fixed',
+              bottom: '20px',
+              right: '20px',
+              padding: '12px',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50%',
+              fontSize: '20px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+              zIndex: 1000
+            }}
+          >
+            💬
+          </button>
+        )}
+        
+        {/* Chat Box */}
+        {showChat && gameStatus === 'active' && (
+          <div style={{
+            position: 'fixed',
+            bottom: '80px',
+            right: '20px',
+            width: '300px',
+            height: '400px',
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 1000
+          }}>
+            <div style={{
+              padding: '16px',
+              borderBottom: '1px solid #e2e8f0',
+              fontWeight: '600',
+              color: '#1e293b',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              Chat
+              <button 
+                onClick={() => setShowChat(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '18px',
+                  cursor: 'pointer',
+                  color: '#64748b'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{
+              flex: 1,
+              padding: '12px',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}>
+              {chatMessages.map((msg) => (
+                <div key={msg.id} style={{
+                  padding: '8px 12px',
+                  backgroundColor: msg.user_email === userEmail ? '#dbeafe' : '#f1f5f9',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  alignSelf: msg.user_email === userEmail ? 'flex-end' : 'flex-start',
+                  maxWidth: '80%'
+                }}>
+                  <div style={{ fontWeight: '600', fontSize: '12px', color: '#64748b', marginBottom: '2px' }}>
+                    {msg.user_email === userEmail ? 'You' : msg.user_email}
+                  </div>
+                  <div style={{ color: '#000000' }}>{msg.message}</div>
+                </div>
+              ))}
+            </div>
+            
+            <div style={{
+              padding: '12px',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              gap: '8px'
+            }}>
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+                placeholder="Type a message..."
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              />
+              <button
+                onClick={sendChatMessage}
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                Send
+              </button>
+            </div>
           </div>
         )}
         

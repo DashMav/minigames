@@ -9,10 +9,12 @@
     "dev:web": "npm run dev --workspace=web",
     "dev:auth": "npm run dev --workspace=auth",
     "dev:tictactoe": "npm run dev --workspace=tictactoe",
+    "dev:chat": "npm run dev --workspace=chat-service",
     "build:web": "npm run build --workspace=web",
     "start:web": "npm run start --workspace=web",
     "start:auth": "npm run start --workspace=auth",
     "start:tictactoe": "npm run start --workspace=tictactoe",
+    "start:chat": "npm run start --workspace=chat-service",
     "build": "npm run build:web",
     "start": "concurrently \"npm run start:auth\" \"npm run start:tictactoe\" \"npm run start:web\""
   },
