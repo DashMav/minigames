@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- Performance: In-memory cache ---
 const gameCache = new Map();
-const CACHE_TTL = 30000; // 30 seconds
+const CACHE_TTL = 60000; // 60 seconds
 
 // --- Middleware ---
 const corsOptions = {
@@ -129,7 +129,7 @@ app.post('/games/:gameId/join', async (req, res) => {
   const { gameId } = req.params;
   const token = req.headers.authorization?.split(' ')[1];
   
-  console.log('Join request for game:', gameId);
+
   
   if (!token) {
     return res.status(401).send({ error: 'Authentication required' });
@@ -137,12 +137,12 @@ app.post('/games/:gameId/join', async (req, res) => {
   
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) {
-    console.log('Auth error:', authError);
+
     return res.status(401).send({ error: 'Invalid token' });
   }
   
   const player_id = user.id;
-  console.log('Player trying to join:', player_id);
+
 
   // Get the specific game
   const { data: gameData, error: gameError } = await supabase
@@ -152,19 +152,19 @@ app.post('/games/:gameId/join', async (req, res) => {
     .single();
 
   if (gameError || !gameData) {
-    console.log('Game not found:', gameError);
+
     return res.status(404).send({ error: 'Game not found' });
   }
 
-  console.log('Game data:', gameData);
+
 
   if (gameData.status !== 'waiting') {
-    console.log('Game status is not waiting:', gameData.status);
+  
     return res.status(400).send({ error: `Game is not available to join. Status: ${gameData.status}` });
   }
 
   if (gameData.player1_id === player_id) {
-    console.log('Player is already player1, returning existing game');
+  
     return res.status(200).send({
       gameId: gameData.id,
       playerSymbol: 'X',
@@ -179,7 +179,7 @@ app.post('/games/:gameId/join', async (req, res) => {
   }
 
   if (gameData.player2_id) {
-    console.log('Game already has player2:', gameData.player2_id);
+  
     return res.status(400).send({ error: 'Game is already full' });
   }
 
@@ -197,7 +197,7 @@ app.post('/games/:gameId/join', async (req, res) => {
 
   // Clear cache to ensure fresh state
   gameCache.delete(gameId);
-  console.log('Player 2 joined, game status updated to active');
+
 
   res.status(200).send({
     gameId: updatedGame.id,
@@ -327,7 +327,8 @@ app.post('/games/:gameId/move', async (req, res) => {
     .from('moves')
     .select('player_id, position, created_at')
     .eq('game_id', gameId)
-    .order('created_at');
+    .order('created_at')
+    .limit(20); // Limit to recent moves for performance
 
   if (fetchError) {
     return res.status(500).send({ error: fetchError.message });

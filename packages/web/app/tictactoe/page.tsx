@@ -168,7 +168,7 @@ export default function TicTacToePage() {
     try {
       const token = localStorage.getItem('auth_token');
       const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL || 'http://localhost:3002';
-      console.log('Game Service URL:', gameServiceUrl);
+
       let url = `${gameServiceUrl}/games`;
       if (specificGameId) {
         url = `${gameServiceUrl}/games/${specificGameId}/join`;
@@ -179,7 +179,7 @@ export default function TicTacToePage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
-      console.log('Game creation/join response:', data);
+
       if (res.ok) {
         setGameId(data.gameId);
         setGameState(data.gameState);
@@ -187,7 +187,7 @@ export default function TicTacToePage() {
         setGameInitialized(true);
         setError('');
         setShowJoinForm(false);
-        console.log('Game initialized:', { gameId: data.gameId, playerSymbol: data.playerSymbol });
+
         return data.gameId;
       } else {
         console.error('Join/Create game failed:', res.status, data);
@@ -231,7 +231,7 @@ export default function TicTacToePage() {
           } catch (err) {
             setError('Could not connect to the game service to fetch state.');
           }
-        }, 50); // Reduced debounce for faster response
+        }, 200); // Balanced debounce
       };
       
       fetchGameState(); // Fetch initial state immediately
@@ -243,7 +243,7 @@ export default function TicTacToePage() {
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'moves', filter: `game_id=eq.${gameId}` },
           (payload) => {
-            console.log('Realtime move received:', payload);
+
             setOptimisticMove(null); // Clear optimistic update
             fetchGameState(); // Re-fetch game state when a new move comes in
           }
@@ -252,28 +252,22 @@ export default function TicTacToePage() {
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
           (payload) => {
-            console.log('Game updated:', payload);
+
             fetchGameState(); // Re-fetch when game status changes
           }
         )
-        .subscribe((status) => {
-          console.log('Supabase subscription status:', status);
-        });
+        .subscribe();
 
-      // Also poll for game status changes every 2 seconds as backup
+      // Also poll for game status changes every 5 seconds as backup
       const pollInterval = setInterval(() => {
         if (gameStatus === 'waiting') {
-          console.log('Polling for game status update...');
           fetchGameState();
         }
-      }, 2000);
-
-      return () => {
-        clearInterval(pollInterval);
-      };
+      }, 5000);
 
       // Cleanup subscription on component unmount
       return () => {
+        clearInterval(pollInterval);
         supabase.removeChannel(channel);
       };
     };
