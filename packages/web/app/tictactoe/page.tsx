@@ -259,7 +259,11 @@ export default function TicTacToePage() {
       fetchGameState();
       fetchChatMessages();
 
-      // Manual refresh only - no automatic polling to prevent resource issues
+al       // Safe polling with longer intervals
+      const pollInterval = setInterval(() => {
+        fetchGameState();
+        fetchChatMessages();
+      }, 5000); // 5 second intervals to prevent resource issues
 
       // Try to subscribe to real-time updates as backup
       const channel = supabase
@@ -284,6 +288,7 @@ export default function TicTacToePage() {
 
       // Cleanup subscription on component unmount
       return () => {
+        clearInterval(pollInterval);
         supabase.removeChannel(channel);
       };
     };
@@ -372,7 +377,7 @@ export default function TicTacToePage() {
   }, [gameId, gameState, playerSymbol]);
 
   const sendChatMessage = async () => {
-    if (!newMessage.trim() || !gameId) return;
+    if (!newMessage.trim() || !gameId || !process.env.NEXT_PUBLIC_CHAT_URL) return;
     
     try {
       const token = localStorage.getItem('auth_token');
@@ -617,7 +622,7 @@ export default function TicTacToePage() {
 
         
         {/* Chat Toggle */}
-        {gameStatus === 'active' && (
+        {gameStatus === 'active' && process.env.NEXT_PUBLIC_CHAT_URL && (
           <button 
             onClick={() => setShowChat(!showChat)}
             style={{
