@@ -300,10 +300,10 @@ export default function TicTacToePage() {
         fetchChatMessages(); // Also poll chat messages
       }, 10000);
       
-      // 1-second chat polling for near real-time updates
+      // 200ms chat polling for instantaneous updates
       const chatPollInterval = setInterval(() => {
         fetchChatMessages();
-      }, 1000);
+      }, 200);
 
       // Cleanup subscription on component unmount
       return () => {
