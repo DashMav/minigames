@@ -209,6 +209,21 @@ export default function TicTacToePage() {
     }
   };
 
+  // Global fetch functions
+  const fetchChatMessages = useCallback(async () => {
+    if (!gameId || !process.env.NEXT_PUBLIC_CHAT_URL) return;
+    try {
+      const chatServiceUrl = process.env.NEXT_PUBLIC_CHAT_URL;
+      const res = await fetchWithPool(`${chatServiceUrl}/chat/${gameId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setChatMessages(data.messages || []);
+      }
+    } catch (err) {
+      // Silent fail
+    }
+  }, [gameId]);
+
   // Effect to subscribe to real-time updates when game is initialized
   useEffect(() => {
     if (!gameId || !gameInitialized) return;
@@ -238,32 +253,16 @@ export default function TicTacToePage() {
         }, 100); // Faster response
       };
       
-
-      
       fetchGameState(); // Fetch initial state immediately
-      
-      const fetchChatMessages = async () => {
-        if (!gameId || !process.env.NEXT_PUBLIC_CHAT_URL) return;
-        try {
-          const chatServiceUrl = process.env.NEXT_PUBLIC_CHAT_URL;
-          const res = await fetchWithPool(`${chatServiceUrl}/chat/${gameId}`);
-          if (res.ok) {
-            const data = await res.json();
-            setChatMessages(data.messages || []);
-          }
-        } catch (err) {
-          // Silent fail
-        }
-      };
       
       fetchGameState();
       fetchChatMessages();
 
-      // Safe polling with longer intervals
+      // Faster polling for better responsiveness
       const pollInterval = setInterval(() => {
         fetchGameState();
         fetchChatMessages();
-      }, 5000); // 5 second intervals to prevent resource issues
+      }, 2000); // 2 second intervals for better UX
 
       // Try to subscribe to real-time updates as backup
       const channel = supabase
@@ -294,7 +293,7 @@ export default function TicTacToePage() {
     };
 
     setupRealtime();
-  }, [gameId, gameInitialized, gameStatus]);
+  }, [gameId, gameInitialized, gameStatus, fetchChatMessages]);
 
   const handleJoinGame = async () => {
     if (!joinGameId.trim()) {
@@ -393,6 +392,8 @@ export default function TicTacToePage() {
       
       if (res.ok) {
         setNewMessage('');
+        // Immediately fetch updated chat messages
+        fetchChatMessages();
       }
     } catch (err) {
       // Silent fail
