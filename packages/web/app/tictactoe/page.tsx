@@ -231,39 +231,35 @@ export default function TicTacToePage() {
           } catch (err) {
             setError('Could not connect to the game service to fetch state.');
           }
-        }, 200); // Balanced debounce
+        }, 100); // Faster response
       };
       
       fetchGameState(); // Fetch initial state immediately
 
-      // Subscribe to real-time updates for moves and game changes
+      // Primary polling mechanism for reliable updates
+      const pollInterval = setInterval(() => {
+        fetchGameState();
+      }, 1500);
+
+      // Try to subscribe to real-time updates as backup
       const channel = supabase
         .channel(`game_${gameId}`)
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'moves', filter: `game_id=eq.${gameId}` },
-          (payload) => {
-
-            setOptimisticMove(null); // Clear optimistic update
-            fetchGameState(); // Re-fetch game state when a new move comes in
+          () => {
+            setOptimisticMove(null);
+            fetchGameState();
           }
         )
         .on(
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
-          (payload) => {
-
-            fetchGameState(); // Re-fetch when game status changes
+          () => {
+            fetchGameState();
           }
         )
         .subscribe();
-
-      // Also poll for game status changes every 5 seconds as backup
-      const pollInterval = setInterval(() => {
-        if (gameStatus === 'waiting') {
-          fetchGameState();
-        }
-      }, 5000);
 
       // Cleanup subscription on component unmount
       return () => {
@@ -273,7 +269,7 @@ export default function TicTacToePage() {
     };
 
     setupRealtime();
-  }, [gameId, gameInitialized]);
+  }, [gameId, gameInitialized, gameStatus]);
 
   const handleJoinGame = async () => {
     if (!joinGameId.trim()) {
@@ -343,6 +339,11 @@ export default function TicTacToePage() {
         setError(data.error || 'Invalid move.');
       } else {
         setError('');
+        // Update game state immediately with server response
+        if (data.gameState) {
+          setGameState(data.gameState);
+          setOptimisticMove(null);
+        }
       }
     } catch (err) {
       setOptimisticMove(null); // Revert optimistic update
