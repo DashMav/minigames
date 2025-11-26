@@ -188,6 +188,7 @@ export default function TicTacToePage() {
         setGameId(data.gameId);
         setGameState(data.gameState);
         setPlayerSymbol(data.playerSymbol);
+        setGameStatus(data.gameState?.currentPlayer ? 'active' : 'waiting');
         setGameInitialized(true);
         setError('');
         setShowJoinForm(false);
@@ -293,8 +294,14 @@ export default function TicTacToePage() {
         )
         .subscribe();
 
+      // Fallback polling every 10 seconds to catch missed events
+      const fallbackInterval = setInterval(() => {
+        fetchGameState();
+      }, 10000);
+
       // Cleanup subscription on component unmount
       return () => {
+        clearInterval(fallbackInterval);
         supabase.removeChannel(channel);
       };
     };
@@ -650,7 +657,7 @@ export default function TicTacToePage() {
         </button>
         
         {/* Chat Toggle */}
-        {gameStatus === 'active' && process.env.NEXT_PUBLIC_CHAT_URL && (
+        {gameId && process.env.NEXT_PUBLIC_CHAT_URL && (
           <button 
             onClick={() => setShowChat(!showChat)}
             style={{
