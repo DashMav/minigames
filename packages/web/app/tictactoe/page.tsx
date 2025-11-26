@@ -287,8 +287,8 @@ export default function TicTacToePage() {
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `game_id=eq.${gameId}` },
-          () => {
-            console.log('New chat message, updating chat');
+          (payload) => {
+            console.log('New chat message detected:', payload);
             fetchChatMessages();
           }
         )
@@ -297,11 +297,18 @@ export default function TicTacToePage() {
       // Fallback polling every 10 seconds to catch missed events
       const fallbackInterval = setInterval(() => {
         fetchGameState();
+        fetchChatMessages(); // Also poll chat messages
       }, 10000);
+      
+      // More frequent chat polling as backup
+      const chatPollInterval = setInterval(() => {
+        fetchChatMessages();
+      }, 3000);
 
       // Cleanup subscription on component unmount
       return () => {
         clearInterval(fallbackInterval);
+        clearInterval(chatPollInterval);
         supabase.removeChannel(channel);
       };
     };
