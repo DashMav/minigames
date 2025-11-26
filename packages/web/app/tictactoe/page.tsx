@@ -259,24 +259,18 @@ export default function TicTacToePage() {
         }, 100); // Faster response
       };
       
-      fetchGameState(); // Fetch initial state immediately
-      
+      // Fetch initial state
       fetchGameState();
       fetchChatMessages();
 
-      // Faster polling for better responsiveness
-      const pollInterval = setInterval(() => {
-        fetchGameState();
-        fetchChatMessages();
-      }, 2000); // 2 second intervals for better UX
-
-      // Try to subscribe to real-time updates as backup
+      // Event-driven real-time subscriptions
       const channel = supabase
         .channel(`game_${gameId}`)
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'moves', filter: `game_id=eq.${gameId}` },
           () => {
+            console.log('Move detected, updating game state');
             setOptimisticMove(null);
             fetchGameState();
           }
@@ -285,15 +279,22 @@ export default function TicTacToePage() {
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'games', filter: `id=eq.${gameId}` },
           () => {
+            console.log('Game updated, fetching state');
             fetchGameState();
           }
         )
-
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `game_id=eq.${gameId}` },
+          () => {
+            console.log('New chat message, updating chat');
+            fetchChatMessages();
+          }
+        )
         .subscribe();
 
       // Cleanup subscription on component unmount
       return () => {
-        clearInterval(pollInterval);
         supabase.removeChannel(channel);
       };
     };
