@@ -214,13 +214,17 @@ export default function TicTacToePage() {
     if (!gameId || !process.env.NEXT_PUBLIC_CHAT_URL) return;
     try {
       const chatServiceUrl = process.env.NEXT_PUBLIC_CHAT_URL;
+      console.log('Fetching chat for gameId:', gameId);
       const res = await fetchWithPool(`${chatServiceUrl}/chat/${gameId}`);
       if (res.ok) {
         const data = await res.json();
+        console.log('Chat messages received:', data.messages?.length || 0);
         setChatMessages(data.messages || []);
+      } else {
+        console.error('Chat fetch failed:', res.status);
       }
     } catch (err) {
-      // Silent fail
+      console.error('Chat fetch error:', err);
     }
   }, [gameId]);
 
@@ -241,10 +245,12 @@ export default function TicTacToePage() {
             const res = await fetchWithPool(`${gameServiceUrl}/games/${gameId}`);
             const data = await res.json();
             if (res.ok) {
+              console.log('Game state updated:', data.gameInfo?.status);
               setGameState(data.gameState);
               setGameStatus(data.gameInfo?.status || 'waiting');
               setError('');
             } else {
+              console.error('Game fetch failed:', res.status, data);
               setError('Failed to fetch game state: ' + (data.error || 'Unknown error.'));
             }
           } catch (err) {
@@ -621,6 +627,26 @@ export default function TicTacToePage() {
         )}
         
 
+        
+        {/* Debug: Manual Refresh */}
+        <button 
+          onClick={() => { fetchChatMessages(); }}
+          style={{
+            position: 'fixed',
+            top: '100px',
+            right: '20px',
+            padding: '8px',
+            backgroundColor: '#10b981',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: '12px',
+            cursor: 'pointer',
+            zIndex: 1000
+          }}
+        >
+          Refresh Chat
+        </button>
         
         {/* Chat Toggle */}
         {gameStatus === 'active' && process.env.NEXT_PUBLIC_CHAT_URL && (
