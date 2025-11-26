@@ -259,27 +259,7 @@ export default function TicTacToePage() {
       fetchGameState();
       fetchChatMessages();
 
-      // Primary polling mechanism with backoff
-      let pollDelay = 3000; // Start with 3 seconds
-      const maxDelay = 10000; // Max 10 seconds
-      let consecutiveErrors = 0;
-      
-      const poll = () => {
-        Promise.all([fetchGameState(), fetchChatMessages()])
-          .then(() => {
-            consecutiveErrors = 0;
-            pollDelay = 3000; // Reset to 3 seconds on success
-          })
-          .catch(() => {
-            consecutiveErrors++;
-            pollDelay = Math.min(pollDelay * 1.5, maxDelay); // Exponential backoff
-          })
-          .finally(() => {
-            setTimeout(poll, pollDelay);
-          });
-      };
-      
-      setTimeout(poll, 3000); // Start polling after 3 seconds
+      // Manual refresh only - no automatic polling to prevent resource issues
 
       // Try to subscribe to real-time updates as backup
       const channel = supabase
@@ -303,14 +283,7 @@ export default function TicTacToePage() {
         .subscribe();
 
       // Cleanup subscription on component unmount
-      let isActive = true;
-      const originalPoll = poll;
-      poll = () => {
-        if (isActive) originalPoll();
-      };
-      
       return () => {
-        isActive = false;
         supabase.removeChannel(channel);
       };
     };
