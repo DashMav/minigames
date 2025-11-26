@@ -298,6 +298,34 @@ export default function TicTacToePage() {
     await createOrJoinGame();
   };
 
+  const handleQuitGame = async () => {
+    if (!gameId) return;
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const gameServiceUrl = process.env.NEXT_PUBLIC_GAME_URL || 'http://localhost:3002';
+      const res = await fetchWithPool(`${gameServiceUrl}/games/${gameId}/quit`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        // Reset to initial state
+        setGameId(null);
+        setGameState(null);
+        setPlayerSymbol(null);
+        setGameStatus('waiting');
+        setGameInitialized(false);
+        setError('');
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Failed to quit game');
+      }
+    } catch (err) {
+      setError('Could not connect to the game service.');
+    }
+  };
+
   const handleMove = useCallback(async (position: number) => {
     if (!gameId || !gameState || gameState.winner) return;
 
@@ -495,6 +523,31 @@ export default function TicTacToePage() {
           {status}
         </div>
         {gameBoard}
+        
+        {/* Quit Game Button */}
+        {(gameStatus === 'active' || gameStatus === 'waiting') && (
+          <div style={{ marginTop: '20px' }}>
+            <button 
+              onClick={handleQuitGame}
+              style={{ 
+                padding: '10px 20px', 
+                backgroundColor: '#dc2626', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+            >
+              Quit Game
+            </button>
+          </div>
+        )}
+        
         {gameState.cooldownSpot !== null && (
           <div style={{ 
             marginTop: '20px', 

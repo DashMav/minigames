@@ -388,6 +388,57 @@ app.post('/games/:gameId/move', async (req, res) => {
   res.send({ gameState: newGameState });
 });
 
+// Quit game
+app.post('/games/:gameId/quit', async (req, res) => {
+  const { gameId } = req.params;
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).send({ error: 'Authentication required' });
+  }
+  
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return res.status(401).send({ error: 'Invalid token' });
+  }
+  
+  const player_id = user.id;
+
+  // Get game info
+  const { data: gameInfo, error: gameError } = await supabase
+    .from('games')
+    .select('*')
+    .eq('id', gameId)
+    .single();
+  
+  if (gameError) {
+    return res.status(500).send({ error: gameError.message });
+  }
+  
+  // Check if player is part of the game
+  if (player_id !== gameInfo.player1_id && player_id !== gameInfo.player2_id) {
+    return res.status(403).send({ error: 'You are not part of this game.' });
+  }
+
+  // Determine winner (the other player)
+  const winnerId = player_id === gameInfo.player1_id ? gameInfo.player2_id : gameInfo.player1_id;
+  
+  // Update game status to completed with winner
+  const { error: updateError } = await supabase
+    .from('games')
+    .update({ status: 'completed', winner_id: winnerId })
+    .eq('id', gameId);
+  
+  if (updateError) {
+    return res.status(500).send({ error: updateError.message });
+  }
+  
+  // Clear cache
+  gameCache.delete(gameId);
+  
+  res.send({ message: 'Game quit successfully' });
+});
+
 // --- Server Start ---
 app.listen(port, '0.0.0.0', () => {
   const os = require('os');
