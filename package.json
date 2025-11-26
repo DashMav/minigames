@@ -1,12 +1,20 @@
 {
-  "name": "mini-games",
-  "version": "0.1.0",
+  "name": "mini-games-root",
+  "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "dev:web": "npm run dev --workspace=web",
+    "dev:auth": "npm run dev --workspace=auth",
+    "dev:tictactoe": "npm run dev --workspace=tictactoe",
+    "build:web": "npm run build --workspace=web",
+    "start:web": "npm run start --workspace=web",
+    "start:auth": "npm run start --workspace=auth",
+    "start:tictactoe": "npm run start --workspace=tictactoe",
+    "build": "npm run build:web",
+    "start": "concurrently \"npm run start:auth\" \"npm run start:tictactoe\" \"npm run start:web\""
   },
   "dependencies": {
     "next": "16.0.4",
@@ -21,6 +29,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.4",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "concurrently": "^7.6.0"
   }
 }
