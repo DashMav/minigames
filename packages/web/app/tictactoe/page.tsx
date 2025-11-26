@@ -259,7 +259,7 @@ export default function TicTacToePage() {
       fetchGameState();
       fetchChatMessages();
 
-al       // Safe polling with longer intervals
+      // Safe polling with longer intervals
       const pollInterval = setInterval(() => {
         fetchGameState();
         fetchChatMessages();
