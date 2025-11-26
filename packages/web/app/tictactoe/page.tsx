@@ -179,6 +179,7 @@ export default function TicTacToePage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
+      console.log('Game creation/join response:', data);
       if (res.ok) {
         setGameId(data.gameId);
         setGameState(data.gameState);
@@ -186,6 +187,7 @@ export default function TicTacToePage() {
         setGameInitialized(true);
         setError('');
         setShowJoinForm(false);
+        console.log('Game initialized:', { gameId: data.gameId, playerSymbol: data.playerSymbol });
         return data.gameId;
       } else {
         console.error('Join/Create game failed:', res.status, data);
@@ -234,7 +236,7 @@ export default function TicTacToePage() {
       
       fetchGameState(); // Fetch initial state immediately
 
-      // Subscribe to real-time updates for moves
+      // Subscribe to real-time updates for moves and game changes
       const channel = supabase
         .channel(`game_${gameId}`)
         .on(
@@ -254,7 +256,21 @@ export default function TicTacToePage() {
             fetchGameState(); // Re-fetch when game status changes
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('Supabase subscription status:', status);
+        });
+
+      // Also poll for game status changes every 2 seconds as backup
+      const pollInterval = setInterval(() => {
+        if (gameStatus === 'waiting') {
+          console.log('Polling for game status update...');
+          fetchGameState();
+        }
+      }, 2000);
+
+      return () => {
+        clearInterval(pollInterval);
+      };
 
       // Cleanup subscription on component unmount
       return () => {

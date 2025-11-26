@@ -176,6 +176,10 @@ app.post('/games/:gameId/join', async (req, res) => {
     return res.status(500).send({ error: updateError.message });
   }
 
+  // Clear cache to ensure fresh state
+  gameCache.delete(gameId);
+  console.log('Player 2 joined, game status updated to active');
+
   res.status(200).send({
     gameId: updatedGame.id,
     playerSymbol: 'O', // Second player is always O
