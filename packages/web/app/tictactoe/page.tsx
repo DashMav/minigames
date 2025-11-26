@@ -243,7 +243,7 @@ export default function TicTacToePage() {
       fetchGameState(); // Fetch initial state immediately
       
       const fetchChatMessages = async () => {
-        if (!gameId || gameStatus !== 'active') return;
+        if (!gameId || !process.env.NEXT_PUBLIC_CHAT_URL) return;
         try {
           const chatServiceUrl = process.env.NEXT_PUBLIC_CHAT_URL;
           const res = await fetchWithPool(`${chatServiceUrl}/chat/${gameId}`);
