@@ -82,20 +82,39 @@ const reconstructGameState = (moves, gameInfo) => {
   const currentPlayer = moves.length % 2 === 0 ? 'X' : 'O';
   const winner = checkWinner(board);
   
-  // Determine cooldown spot - position of the move that was just removed
+  // Determine cooldown spot - position that was just removed when a player exceeded 3 moves
   let cooldownSpot = null;
   
-  // Find the most recently removed move (the 4th oldest move for any player with >3 moves)
-  const allPlayerMoves = [...playerMoves['X'], ...playerMoves['O']];
-  if (allPlayerMoves.length > 6) { // Total moves > 6 means someone has >3 moves
-    // Sort all moves by their original index to find the oldest that was removed
-    allPlayerMoves.sort((a, b) => a.moveIndex - b.moveIndex);
+  // The cooldown spot is the position of the move that was just removed
+  // This happens when a player has exactly 3 moves on the board but had 4+ total moves
+  if (moves.length >= 7) { // At least 7 total moves means someone has made 4+ moves
+    // Find which player just made a move that caused removal
+    const lastMove = moves[moves.length - 1];
+    const lastPlayer = lastMove.player_id === gameInfo.player1_id ? 'X' : 'O';
     
-    // The cooldown spot is the position of the move that would be the 7th oldest
-    // (since we only keep 6 moves total - 3 per player)
-    const removedMoveIndex = allPlayerMoves.length - 6;
-    if (removedMoveIndex >= 0) {
-      cooldownSpot = allPlayerMoves[removedMoveIndex].position;
+    // Count how many moves this player has made total
+    const playerTotalMoves = moves.filter(move => {
+      const movePlayer = move.player_id === gameInfo.player1_id ? 'X' : 'O';
+      return movePlayer === lastPlayer;
+    }).length;
+    
+    // If this player has made 4+ moves, find what was removed
+    if (playerTotalMoves >= 4) {
+      // Find the oldest move by this player that's not on the current board
+      const playerAllMoves = moves.filter(move => {
+        const movePlayer = move.player_id === gameInfo.player1_id ? 'X' : 'O';
+        return movePlayer === lastPlayer;
+      }).sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      
+      // The removed position is the oldest move that's not in the current active moves
+      const activeMoves = playerMoves[lastPlayer];
+      const removedMove = playerAllMoves.find(move => 
+        !activeMoves.some(activeMove => activeMove.position === move.position)
+      );
+      
+      if (removedMove) {
+        cooldownSpot = removedMove.position;
+      }
     }
   }
 
