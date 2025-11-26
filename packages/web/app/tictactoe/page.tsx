@@ -726,7 +726,8 @@ export default function TicTacToePage() {
                   border: '1px solid #d1d5db',
                   borderRadius: '6px',
                   fontSize: '14px',
-                  outline: 'none'
+                  outline: 'none',
+                  color: '#000000'
                 }}
               />
               <button
