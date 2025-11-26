@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: minigames
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: minigames/web:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: minigames-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+  namespace: minigames
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+      - name: auth
+        image: minigames/auth:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3001
+        envFrom:
+        - configMapRef:
+            name: minigames-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tictactoe
+  namespace: minigames
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tictactoe
+  template:
+    metadata:
+      labels:
+        app: tictactoe
+    spec:
+      containers:
+      - name: tictactoe
+        image: minigames/tictactoe:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3002
+        envFrom:
+        - configMapRef:
+            name: minigames-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat
+  namespace: minigames
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: chat
+  template:
+    metadata:
+      labels:
+        app: chat
+    spec:
+      containers:
+      - name: chat
+        image: minigames/chat:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3003
+        envFrom:
+        - configMapRef:
+            name: minigames-config

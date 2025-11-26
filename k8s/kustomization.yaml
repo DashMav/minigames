@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- configmap.yaml
+- deployments.yaml
+- services.yaml
+
+images:
+- name: minigames/web
+  newName: your-dockerhub-username/minigames-web
+  newTag: latest
+- name: minigames/auth
+  newName: your-dockerhub-username/minigames-auth
+  newTag: latest
+- name: minigames/tictactoe
+  newName: your-dockerhub-username/minigames-tictactoe
+  newTag: latest
+- name: minigames/chat
+  newName: your-dockerhub-username/minigames-chat
+  newTag: latest

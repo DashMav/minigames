@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minigames-config
+  namespace: minigames
+data:
+  SUPABASE_URL: "https://bgiiiaxjairvwzqzbtjs.supabase.co"
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnaWlpYXhqYWlydnd6cXpidGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxMTcxMTIsImV4cCI6MjA3OTY5MzExMn0.aWywOUilDqRTSnJXj9YLAMWTn084huSNs4nr1g14KmY"
+  NEXT_PUBLIC_AUTH_URL: "http://localhost:30001"
+  NEXT_PUBLIC_GAME_URL: "http://localhost:30002"
+  NEXT_PUBLIC_CHAT_URL: "http://localhost:30003"
